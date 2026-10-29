@@ -1,0 +1,29 @@
+name: Build oreno-brightness
+on:
+  push:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Unzip project
+        run: unzip -o oreno-brightness.zip -d work
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: 8.7
+      - name: Build
+        working-directory: work
+        run: gradle assembleDebug --no-daemon
+      - name: Publish release latest
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete latest --yes --cleanup-tag || true
+          gh release create latest work/app/build/outputs/apk/debug/app-debug.apk --title latest --notes "auto build"
